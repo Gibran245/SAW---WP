@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SPK — Metode SAW &amp; WP</title>
+
+  <!-- Google Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Sans:wght@300;400;500&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- External Stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ════════════════════════════════
+       HEADER
+  ════════════════════════════════ -->
+  <header>
+    <h1>Sistem Pendukung Keputusan</h1>
+    <p>Evaluasi Kinerja Karyawan &middot; Metode SAW &amp; WP</p>
+    <div class="header-badge">
+      <span class="badge">SAW</span>
+      <span class="badge">WP</span>
+      <span class="badge">Multi-Criteria</span>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════
+       MAIN CONTENT
+  ════════════════════════════════ -->
+  <div class="container">
+
+    <!-- Tabel Kriteria -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-title">
+        <span class="dot"></span> Kriteria Penilaian
+      </div>
+      <table class="crit-table" id="critTable">
+        <thead>
+          <tr>
+            <th>Kode</th>
+            <th>Kriteria</th>
+            <th>Bobot</th>
+            <th>Persentase</th>
+            <th>Tipe</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Diisi oleh JavaScript -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Navigasi Tab -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('input')">① Input Data</button>
+      <button class="tab-btn" onclick="switchTab('saw')">② Metode SAW</button>
+      <button class="tab-btn" onclick="switchTab('wp')">③ Metode WP</button>
+      <button class="tab-btn" onclick="switchTab('compare')">④ Perbandingan</button>
+    </div>
+
+    <!-- ── TAB 1: Input Data ── -->
+    <div id="tab-input" class="tab-panel active">
+
+      <div class="section-title">Input Nilai Alternatif</div>
+
+      <div class="card">
+        <div class="card-title">
+          <span class="dot"></span> Data Kandidat / Alternatif
+        </div>
+        <div class="info-box">
+          Masukkan nilai setiap kandidat pada masing-masing kriteria (skala 1–10).
+          Anda dapat menambah atau menghapus kandidat sesuai kebutuhan.
+        </div>
+
+        <!-- Input alternatif diisi oleh JavaScript -->
+        <div id="altInputs"></div>
+
+        <div class="btn-group">
+          <button class="btn btn-secondary" onclick="addAlternatif()">
+            + Tambah Kandidat
+          </button>
+          <button class="btn btn-primary" onclick="hitungSemua()">
+            Hitung SAW &amp; WP ▶
+          </button>
+        </div>
+      </div>
+
+      <!-- Teori Singkat -->
+      <div class="card" style="margin-top:1.25rem;">
+        <div class="card-title">
+          <span class="dot"></span> Teori Metode
+        </div>
+        <div class="grid-2">
+
+          <!-- SAW -->
+          <div>
+            <div style="font-weight:500;color:var(--sage-dk);margin-bottom:.5rem;
+                        font-family:'Cormorant Garamond',serif;font-size:1.1rem;">
+              SAW — Simple Additive Weighting
+            </div>
+            <p style="font-size:.85rem;color:var(--stone);line-height:1.7;">
+              Metode SAW menormalkan setiap nilai kemudian menjumlahkan hasil kali
+              antara nilai ternormalisasi dengan bobot kriteria. Alternatif terbaik
+              adalah yang memiliki nilai tertinggi.
+            </p>
+            <div class="formula-box">
+              V<sub>i</sub> = &Sigma; ( W<sub>j</sub> &times; r<sub>ij</sub> )
+            </div>
+          </div>
+
+          <!-- WP -->
+          <div>
+            <div style="font-weight:500;color:var(--bark-dk);margin-bottom:.5rem;
+                        font-family:'Cormorant Garamond',serif;font-size:1.1rem;">
+              WP — Weighted Product
+            </div>
+            <p style="font-size:.85rem;color:var(--stone);line-height:1.7;">
+              Metode WP mengalikan nilai setiap kriteria yang telah dipangkatkan
+              sesuai bobotnya. Hasil perkalian kemudian dibandingkan antar-alternatif
+              untuk menentukan peringkat.
+            </p>
+            <div class="formula-box">
+              S<sub>i</sub> = &prod; ( x<sub>ij</sub> )<sup>w<sub>j</sub></sup>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /tab-input -->
+
+
+    <!-- ── TAB 2: SAW ── -->
+    <div id="tab-saw" class="tab-panel">
+      <div class="section-title">Metode SAW</div>
+      <div id="saw-content">
+        <div class="empty-state">
+          <div class="empty-icon">🌿</div>
+          Silakan input data terlebih dahulu dan tekan <b>Hitung</b>.
+        </div>
+      </div>
+    </div><!-- /tab-saw -->
+
+
+    <!-- ── TAB 3: WP ── -->
+    <div id="tab-wp" class="tab-panel">
+      <div class="section-title">Metode WP</div>
+      <div id="wp-content">
+        <div class="empty-state">
+          <div class="empty-icon">🌿</div>
+          Silakan input data terlebih dahulu dan tekan <b>Hitung</b>.
+        </div>
+      </div>
+    </div><!-- /tab-wp -->
+
+
+    <!-- ── TAB 4: Perbandingan ── -->
+    <div id="tab-compare" class="tab-panel">
+      <div class="section-title">Perbandingan Hasil</div>
+      <div id="compare-content">
+        <div class="empty-state">
+          <div class="empty-icon">🌿</div>
+          Silakan input data terlebih dahulu dan tekan <b>Hitung</b>.
+        </div>
+      </div>
+    </div><!-- /tab-compare -->
+
+  </div><!-- /container -->
+
+  <!-- Toast Notifikasi -->
+  <div class="toast" id="toast"></div>
+
+  <!-- External JavaScript -->
+  <script src="app.js"></script>
+
+</body>
+</html>
