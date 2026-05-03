@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════
-   SPK Metode SAW & WP — JavaScript
+   SPK Metode SAW, WP & SMART — JavaScript
    app.js
 ══════════════════════════════════════ */
 
@@ -15,19 +15,19 @@ const kriteria = [
 ];
 
 /* ════════════════════════════════════
-     DATA ALTERNATIF (DEFAULT)
-  ════════════════════════════════════ */
+   DATA ALTERNATIF (DEFAULT)
+════════════════════════════════════ */
 let alternatif = [
   { nama: "Gibran", nilai: [8, 7, 6, 8, 9] },
   { nama: "Mandi", nilai: [7, 9, 8, 7, 6] },
   { nama: "Usep", nilai: [9, 6, 7, 9, 8] },
-  { nama: "Albert simanjuntak", nilai: [6, 8, 9, 6, 7] },
+  { nama: "Albert Simanjuntak", nilai: [6, 8, 9, 6, 7] },
   { nama: "Eka Wahyu", nilai: [7, 7, 7, 8, 8] },
 ];
 
 /* ════════════════════════════════════
-     RENDER KRITERIA TABLE
-  ════════════════════════════════════ */
+   RENDER KRITERIA TABLE
+════════════════════════════════════ */
 function renderKriteria() {
   const tbody = document.querySelector("#critTable tbody");
   tbody.innerHTML = kriteria
@@ -56,8 +56,8 @@ function renderKriteria() {
 }
 
 /* ════════════════════════════════════
-     RENDER INPUT ALTERNATIF
-  ════════════════════════════════════ */
+   RENDER INPUT ALTERNATIF
+════════════════════════════════════ */
 function renderInputs() {
   const container = document.getElementById("altInputs");
   container.innerHTML = alternatif
@@ -65,7 +65,7 @@ function renderInputs() {
       (a, i) => `
       <div class="alt-card" id="alt-${i}">
         <div class="alt-num">${i + 1}</div>
-  
+
         <div class="alt-name-input">
           <input
             type="text"
@@ -74,7 +74,7 @@ function renderInputs() {
             onchange="alternatif[${i}].nama = this.value"
           />
         </div>
-  
+
         <div class="alt-values">
           ${kriteria
             .map(
@@ -95,7 +95,7 @@ function renderInputs() {
             )
             .join("")}
         </div>
-  
+
         ${
           alternatif.length > 2
             ? `<button class="btn-remove" onclick="removeAlt(${i})" title="Hapus kandidat">×</button>`
@@ -108,8 +108,8 @@ function renderInputs() {
 }
 
 /* ════════════════════════════════════
-     TAMBAH / HAPUS ALTERNATIF
-  ════════════════════════════════════ */
+   TAMBAH / HAPUS ALTERNATIF
+════════════════════════════════════ */
 function addAlternatif() {
   const n = alternatif.length + 1;
   alternatif.push({ nama: `Kandidat ${n}`, nilai: [5, 5, 5, 5, 5] });
@@ -123,17 +123,13 @@ function removeAlt(i) {
 }
 
 /* ════════════════════════════════════
-     ALGORITMA SAW
-     Simple Additive Weighting
-  ════════════════════════════════════ */
+   ALGORITMA SAW
+   Simple Additive Weighting
+════════════════════════════════════ */
 function hitungSAW() {
-  const n = alternatif.length;
-  const m = kriteria.length;
-
-  // Langkah 1: Matriks Keputusan X
   const X = alternatif.map((a) => [...a.nilai]);
 
-  // Langkah 2: Normalisasi → Matriks R
+  // Normalisasi → Matriks R
   const R = X.map((row) =>
     row.map((val, j) => {
       const kolom = X.map((r) => r[j]);
@@ -145,12 +141,11 @@ function hitungSAW() {
     })
   );
 
-  // Langkah 3: Nilai Preferensi V
+  // Nilai Preferensi V
   const V = R.map((row) =>
     row.reduce((sum, val, j) => sum + kriteria[j].bobot * val, 0)
   );
 
-  // Langkah 4: Ranking
   const ranked = alternatif
     .map((a, i) => ({ nama: a.nama, skor: V[i], idx: i }))
     .sort((a, b) => b.skor - a.skor);
@@ -159,11 +154,10 @@ function hitungSAW() {
 }
 
 /* ════════════════════════════════════
-     ALGORITMA WP
-     Weighted Product
-  ════════════════════════════════════ */
+   ALGORITMA WP
+   Weighted Product
+════════════════════════════════════ */
 function hitungWP() {
-  // Langkah 1: Vektor S (produk terbobot)
   const S = alternatif.map((a) =>
     kriteria.reduce((prod, k, j) => {
       const exp = k.tipe === "benefit" ? k.bobot : -k.bobot;
@@ -171,11 +165,9 @@ function hitungWP() {
     }, 1)
   );
 
-  // Langkah 2: Vektor V (normalisasi S)
   const sumS = S.reduce((a, b) => a + b, 0);
   const V = S.map((s) => s / sumS);
 
-  // Langkah 3: Ranking
   const ranked = alternatif
     .map((a, i) => ({ nama: a.nama, skor: V[i], skorS: S[i], idx: i }))
     .sort((a, b) => b.skor - a.skor);
@@ -184,209 +176,268 @@ function hitungWP() {
 }
 
 /* ════════════════════════════════════
-     RENDER HASIL SAW
-  ════════════════════════════════════ */
+   ALGORITMA SMART
+   Simple Multi-Attribute Rating Technique
+
+   Langkah-langkah:
+   1. Tentukan bobot kriteria (sudah ada, dinormalisasi agar jumlah = 1)
+   2. Hitung nilai utilitas u_ij menggunakan transformasi linear:
+        u_ij = (x_ij - x_min_j) / (x_max_j - x_min_j)  → benefit
+        u_ij = (x_max_j - x_ij) / (x_max_j - x_min_j)  → cost
+   3. Hitung skor akhir: U_i = Σ (w_j * u_ij)
+   4. Ranking berdasarkan U_i tertinggi
+════════════════════════════════════ */
+function hitungSMART() {
+  const n = alternatif.length;
+  const m = kriteria.length;
+
+  // Langkah 1: Normalisasi bobot (pastikan jumlah = 1)
+  const totalBobot = kriteria.reduce((s, k) => s + k.bobot, 0);
+  const wNorm = kriteria.map((k) => k.bobot / totalBobot);
+
+  // Langkah 2: Hitung nilai utilitas u_ij
+  // Cari min & max per kolom kriteria
+  const minKol = kriteria.map((_, j) =>
+    Math.min(...alternatif.map((a) => a.nilai[j]))
+  );
+  const maxKol = kriteria.map((_, j) =>
+    Math.max(...alternatif.map((a) => a.nilai[j]))
+  );
+
+  const U = alternatif.map((a) =>
+    kriteria.map((k, j) => {
+      const range = maxKol[j] - minKol[j];
+      if (range === 0) return 1; // semua nilai sama → utilitas penuh
+      if (k.tipe === "benefit") {
+        return (a.nilai[j] - minKol[j]) / range;
+      } else {
+        return (maxKol[j] - a.nilai[j]) / range;
+      }
+    })
+  );
+
+  // Langkah 3: Skor akhir
+  const skor = U.map((row) => row.reduce((sum, u, j) => sum + wNorm[j] * u, 0));
+
+  // Langkah 4: Ranking
+  const ranked = alternatif
+    .map((a, i) => ({ nama: a.nama, skor: skor[i], idx: i }))
+    .sort((a, b) => b.skor - a.skor);
+
+  return { U, skor, wNorm, minKol, maxKol, ranked };
+}
+
+/* ════════════════════════════════════
+   RENDER HASIL SAW
+════════════════════════════════════ */
 function renderSAW(res) {
   const { X, R, V, ranked } = res;
   const maxV = Math.max(...V);
 
   document.getElementById("saw-content").innerHTML = `
-      <div class="steps">
-        ${buildStep(
-          1,
-          "Matriks Keputusan (X)",
-          `
-          <p style="font-size:.83rem;color:var(--stone);margin-bottom:.8rem;">
-            Nilai asli setiap alternatif pada tiap kriteria.
-          </p>
-          <div class="matrix-wrap">${buildMatrixTable(X, false, V)}</div>
+    <div class="steps">
+      ${buildStep(
+        1,
+        "Matriks Keputusan (X)",
         `
-        )}
-  
-        ${buildStep(
-          2,
-          "Normalisasi Matriks (R)",
-          `
-          <div class="info-box">
-            <b>Benefit:</b> r<sub>ij</sub> = x<sub>ij</sub> / max(x<sub>j</sub>)
-            &nbsp;|&nbsp;
-            <b>Cost:</b> r<sub>ij</sub> = min(x<sub>j</sub>) / x<sub>ij</sub>
-          </div>
-          <div class="matrix-wrap">${buildMatrixTable(R, true, V)}</div>
+        <p style="font-size:.83rem;color:var(--stone);margin-bottom:.8rem;">
+          Nilai asli setiap alternatif pada tiap kriteria.
+        </p>
+        <div class="matrix-wrap">${buildMatrixTable(X, false, null)}</div>
+      `
+      )}
+
+      ${buildStep(
+        2,
+        "Normalisasi Matriks (R)",
         `
-        )}
-  
-        ${buildStep(
-          3,
-          "Nilai Preferensi (V)",
-          `
-          <p style="font-size:.83rem;color:var(--stone);margin-bottom:.8rem;">
-            V<sub>i</sub> = &Sigma; (W<sub>j</sub> &times; r<sub>ij</sub>)
-            &mdash; semakin tinggi nilainya, semakin baik alternatif tersebut.
-          </p>
-          ${buildRankList(ranked, maxV)}
+        <div class="info-box">
+          <b>Benefit:</b> r<sub>ij</sub> = x<sub>ij</sub> / max(x<sub>j</sub>)
+          &nbsp;|&nbsp;
+          <b>Cost:</b> r<sub>ij</sub> = min(x<sub>j</sub>) / x<sub>ij</sub>
+        </div>
+        <div class="matrix-wrap">${buildMatrixTable(R, true, V)}</div>
+      `
+      )}
+
+      ${buildStep(
+        3,
+        "Nilai Preferensi (V)",
         `
-        )}
-      </div>
-    `;
+        <p style="font-size:.83rem;color:var(--stone);margin-bottom:.8rem;">
+          V<sub>i</sub> = &Sigma; (W<sub>j</sub> &times; r<sub>ij</sub>)
+          &mdash; semakin tinggi nilainya, semakin baik alternatif tersebut.
+        </p>
+        ${buildRankList(ranked, maxV)}
+      `
+      )}
+    </div>
+  `;
 
   openAllSteps("saw-content");
 }
 
 /* ════════════════════════════════════
-     RENDER HASIL WP
-  ════════════════════════════════════ */
+   RENDER HASIL WP
+════════════════════════════════════ */
 function renderWP(res) {
   const { S, V, ranked } = res;
   const maxV = Math.max(...V);
 
   document.getElementById("wp-content").innerHTML = `
-      <div class="steps">
-        ${buildStep(
-          1,
-          "Vektor S (Produk Terbobot)",
-          `
-          <div class="info-box">
-            S<sub>i</sub> = &prod; (x<sub>ij</sub>)<sup>w<sub>j</sub></sup>
-            &mdash; benefit: eksponen positif, cost: eksponen negatif.
-          </div>
-          <div class="matrix-wrap">
-            <table class="matrix-table">
-              <thead>
-                <tr>
-                  <th>Alternatif</th>
-                  ${kriteria
-                    .map((k) => `<th>${k.kode} (w=${k.bobot})</th>`)
-                    .join("")}
-                  <th>S<sub>i</sub></th>
-                </tr>
-              </thead>
-              <tbody>
-                ${alternatif
-                  .map(
-                    (a, i) => `
-                  <tr>
-                    <td>${a.nama}</td>
-                    ${a.nilai
-                      .map((v, j) => {
-                        const exp =
-                          kriteria[j].tipe === "benefit"
-                            ? kriteria[j].bobot
-                            : -kriteria[j].bobot;
-                        return `<td>${v}<sup>${exp.toFixed(
-                          2
-                        )}</sup> = ${Math.pow(v, exp).toFixed(4)}</td>`;
-                      })
-                      .join("")}
-                    <td><b>${S[i].toFixed(4)}</b></td>
-                  </tr>
-                `
-                  )
+    <div class="steps">
+      ${buildStep(
+        1,
+        "Vektor S (Produk Terbobot)",
+        `
+        <div class="info-box">
+          S<sub>i</sub> = &prod; (x<sub>ij</sub>)<sup>w<sub>j</sub></sup>
+          &mdash; benefit: eksponen positif, cost: eksponen negatif.
+        </div>
+        <div class="matrix-wrap">
+          <table class="matrix-table">
+            <thead>
+              <tr>
+                <th>Alternatif</th>
+                ${kriteria
+                  .map((k) => `<th>${k.kode} (w=${k.bobot})</th>`)
                   .join("")}
-              </tbody>
-            </table>
-          </div>
+                <th>S<sub>i</sub></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${alternatif
+                .map(
+                  (a, i) => `
+                <tr>
+                  <td>${a.nama}</td>
+                  ${a.nilai
+                    .map((v, j) => {
+                      const exp =
+                        kriteria[j].tipe === "benefit"
+                          ? kriteria[j].bobot
+                          : -kriteria[j].bobot;
+                      return `<td>${v}<sup>${exp.toFixed(2)}</sup> = ${Math.pow(
+                        v,
+                        exp
+                      ).toFixed(4)}</td>`;
+                    })
+                    .join("")}
+                  <td><b>${S[i].toFixed(4)}</b></td>
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+      `
+      )}
+
+      ${buildStep(
+        2,
+        "Vektor V (Normalisasi S)",
         `
-        )}
-  
-        ${buildStep(
-          2,
-          "Vektor V (Normalisasi S)",
-          `
-          <div class="info-box">
-            V<sub>i</sub> = S<sub>i</sub> / &Sigma;S
-            &mdash; normalisasi agar total keseluruhan = 1.
-          </div>
-          ${buildRankList(ranked, maxV)}
-        `
-        )}
-      </div>
-    `;
+        <div class="info-box">
+          V<sub>i</sub> = S<sub>i</sub> / &Sigma;S
+          &mdash; normalisasi agar total keseluruhan = 1.
+        </div>
+        ${buildRankList(ranked, maxV)}
+      `
+      )}
+    </div>
+  `;
 
   openAllSteps("wp-content");
 }
 
 /* ════════════════════════════════════
-     RENDER PERBANDINGAN SAW vs WP
-  ════════════════════════════════════ */
-function renderCompare(sawRes, wpRes) {
-  const data = alternatif
-    .map((a, i) => {
-      const sawRank = sawRes.ranked.findIndex((r) => r.idx === i) + 1;
-      const wpRank = wpRes.ranked.findIndex((r) => r.idx === i) + 1;
-      return {
-        nama: a.nama,
-        sawSkor: sawRes.V[i],
-        wpSkor: wpRes.V[i],
-        sawRank,
-        wpRank,
-      };
-    })
-    .sort((a, b) => a.sawRank - b.sawRank);
+   RENDER HASIL SMART
+════════════════════════════════════ */
+function renderSMART(res) {
+  const { U, skor, wNorm, minKol, maxKol, ranked } = res;
+  const maxSkor = Math.max(...skor);
 
-  const concordant = data.filter((d) => d.sawRank === d.wpRank).length;
-  const pct = Math.round((concordant / data.length) * 100);
+  document.getElementById("smart-content").innerHTML = `
+    <div class="steps">
 
-  const maxSaw = Math.max(...sawRes.V);
-  const maxWp = Math.max(...wpRes.V);
-  const sortedViz = [...data].sort((a, b) => b.sawSkor - a.sawSkor);
-
-  document.getElementById("compare-content").innerHTML = `
-      <!-- Rekomendasi Terbaik -->
-      <div class="grid-2" style="margin-bottom:1.25rem;">
-        <div class="card" style="border-left:3px solid var(--sage);">
-          <div style="font-size:.8rem;color:var(--stone);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">
-            Rekomendasi SAW
-          </div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--sage-dk);">
-            ${sawRes.ranked[0].nama}
-          </div>
-          <div style="font-size:.83rem;color:var(--stone);">
-            Skor: ${sawRes.ranked[0].skor.toFixed(4)}
-          </div>
+      ${buildStep(
+        1,
+        "Bobot Ternormalisasi (w)",
+        `
+        <div class="info-box teal-box">
+          Bobot dinormalisasi sehingga &Sigma;w<sub>j</sub> = 1.
+          Pada kasus ini bobot sudah berjumlah 1, sehingga tidak berubah.
         </div>
-        <div class="card" style="border-left:3px solid var(--bark);">
-          <div style="font-size:.8rem;color:var(--stone);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">
-            Rekomendasi WP
-          </div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--bark-dk);">
-            ${wpRes.ranked[0].nama}
-          </div>
-          <div style="font-size:.83rem;color:var(--stone);">
-            Skor: ${wpRes.ranked[0].skor.toFixed(4)}
-          </div>
-        </div>
-      </div>
-  
-      <!-- Tabel Perbandingan -->
-      <div class="card">
-        <div class="card-title"><span class="dot"></span> Tabel Perbandingan Peringkat</div>
         <div class="matrix-wrap">
-          <table class="compare-table">
+          <table class="weight-table">
             <thead>
               <tr>
-                <th>Alternatif</th>
-                <th>Skor SAW</th>
-                <th>Rank SAW</th>
-                <th>Skor WP</th>
-                <th>Rank WP</th>
-                <th>Kesesuaian</th>
+                <th>Kode</th>
+                <th>Kriteria</th>
+                <th>Bobot Asli</th>
+                <th>Bobot Ternormalisasi</th>
+                <th>Tipe</th>
               </tr>
             </thead>
             <tbody>
-              ${data
+              ${kriteria
                 .map(
-                  (d) => `
+                  (k, j) => `
                 <tr>
-                  <td>${d.nama}</td>
-                  <td>${d.sawSkor.toFixed(4)}</td>
-                  <td>${d.sawRank}</td>
-                  <td>${d.wpSkor.toFixed(4)}</td>
-                  <td>${d.wpRank}</td>
-                  <td class="${
-                    d.sawRank === d.wpRank ? "same-rank" : "diff-rank"
-                  }">
-                    ${d.sawRank === d.wpRank ? "✓ Sama" : "≠ Beda"}
+                  <td><b>${k.kode}</b></td>
+                  <td>${k.nama}</td>
+                  <td>${k.bobot}</td>
+                  <td><b>${wNorm[j].toFixed(4)}</b></td>
+                  <td><span class="type-badge ${k.tipe}">${
+                    k.tipe === "benefit" ? "Benefit ↑" : "Cost ↓"
+                  }</span></td>
+                </tr>
+              `
+                )
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+      `,
+        true
+      )}
+
+      ${buildStep(
+        2,
+        "Nilai Utilitas u<sub>ij</sub>",
+        `
+        <div class="info-box teal-box">
+          <b>Benefit:</b> u<sub>ij</sub> = (x<sub>ij</sub> &minus; x<sub>min</sub>) / (x<sub>max</sub> &minus; x<sub>min</sub>)
+          &nbsp;|&nbsp;
+          <b>Cost:</b> u<sub>ij</sub> = (x<sub>max</sub> &minus; x<sub>ij</sub>) / (x<sub>max</sub> &minus; x<sub>min</sub>)
+        </div>
+        <p style="font-size:.83rem;color:var(--stone);margin-bottom:.5rem;">
+          Range per kriteria:
+          ${kriteria
+            .map((k, j) => `<b>${k.kode}</b>: [${minKol[j]}–${maxKol[j]}]`)
+            .join(", ")}
+        </p>
+        <div class="matrix-wrap">
+          <table class="matrix-table teal-header">
+            <thead>
+              <tr>
+                <th>Alternatif</th>
+                ${kriteria.map((k) => `<th>u(${k.kode})</th>`).join("")}
+                <th>U<sub>i</sub></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${alternatif
+                .map(
+                  (a, i) => `
+                <tr>
+                  <td>${a.nama}</td>
+                  ${U[i].map((u) => `<td>${u.toFixed(4)}</td>`).join("")}
+                  <td style="font-weight:500;color:${
+                    skor[i] === maxSkor ? "var(--teal-dk)" : "inherit"
+                  };">
+                    ${skor[i].toFixed(4)} ${skor[i] === maxSkor ? "★" : ""}
                   </td>
                 </tr>
               `
@@ -395,153 +446,342 @@ function renderCompare(sawRes, wpRes) {
             </tbody>
           </table>
         </div>
-        <div class="info-box" style="margin-top:1rem;">
-          <b>Tingkat Kesesuaian:</b> ${concordant} dari ${
+      `,
+        true
+      )}
+
+      ${buildStep(
+        3,
+        "Skor Akhir & Peringkat (U)",
+        `
+        <p style="font-size:.83rem;color:var(--stone);margin-bottom:.8rem;">
+          U<sub>i</sub> = &Sigma; (w<sub>j</sub> &times; u<sub>ij</sub>)
+          &mdash; alternatif dengan skor tertinggi adalah pilihan terbaik.
+        </p>
+        ${buildRankListSMART(ranked, maxSkor)}
+      `,
+        true
+      )}
+
+    </div>
+  `;
+
+  openAllSteps("smart-content");
+}
+
+/* ════════════════════════════════════
+   RENDER PERBANDINGAN SAW vs WP vs SMART
+════════════════════════════════════ */
+function renderCompare(sawRes, wpRes, smartRes) {
+  const data = alternatif
+    .map((a, i) => {
+      const sawRank = sawRes.ranked.findIndex((r) => r.idx === i) + 1;
+      const wpRank = wpRes.ranked.findIndex((r) => r.idx === i) + 1;
+      const smartRank = smartRes.ranked.findIndex((r) => r.idx === i) + 1;
+      return {
+        nama: a.nama,
+        sawSkor: sawRes.V[i],
+        wpSkor: wpRes.V[i],
+        smartSkor: smartRes.skor[i],
+        sawRank,
+        wpRank,
+        smartRank,
+      };
+    })
+    .sort((a, b) => a.sawRank - b.sawRank);
+
+  // Kesesuaian: ketiga metode memberikan rank yang sama
+  const allSame = data.filter(
+    (d) => d.sawRank === d.wpRank && d.wpRank === d.smartRank
+  ).length;
+  const sawWpSame = data.filter((d) => d.sawRank === d.wpRank).length;
+  const pctAll = Math.round((allSame / data.length) * 100);
+  const pctSawWp = Math.round((sawWpSame / data.length) * 100);
+
+  const maxSaw = Math.max(...sawRes.V);
+  const maxWp = Math.max(...wpRes.V);
+  const maxSmart = Math.max(...smartRes.skor);
+  const sortedViz = [...data].sort((a, b) => b.sawSkor - a.sawSkor);
+
+  document.getElementById("compare-content").innerHTML = `
+    <!-- Rekomendasi Terbaik (3 kolom) -->
+    <div class="grid-3" style="margin-bottom:1.25rem;">
+      <div class="card" style="border-left:3px solid var(--sage);">
+        <div style="font-size:.8rem;color:var(--stone);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">
+          Rekomendasi SAW
+        </div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--sage-dk);">
+          ${sawRes.ranked[0].nama}
+        </div>
+        <div style="font-size:.83rem;color:var(--stone);">
+          Skor: ${sawRes.ranked[0].skor.toFixed(4)}
+        </div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--bark);">
+        <div style="font-size:.8rem;color:var(--stone);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">
+          Rekomendasi WP
+        </div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--bark-dk);">
+          ${wpRes.ranked[0].nama}
+        </div>
+        <div style="font-size:.83rem;color:var(--stone);">
+          Skor: ${wpRes.ranked[0].skor.toFixed(4)}
+        </div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--teal);">
+        <div style="font-size:.8rem;color:var(--stone);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem;">
+          Rekomendasi SMART
+        </div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--teal-dk);">
+          ${smartRes.ranked[0].nama}
+        </div>
+        <div style="font-size:.83rem;color:var(--stone);">
+          Skor: ${smartRes.ranked[0].skor.toFixed(4)}
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabel Perbandingan -->
+    <div class="card">
+      <div class="card-title"><span class="dot"></span> Tabel Perbandingan Peringkat</div>
+      <div class="matrix-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Alternatif</th>
+              <th>Skor SAW</th>
+              <th>Rank SAW</th>
+              <th>Skor WP</th>
+              <th>Rank WP</th>
+              <th>Skor SMART</th>
+              <th>Rank SMART</th>
+              <th>Konsistensi</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data
+              .map((d) => {
+                const allEq =
+                  d.sawRank === d.wpRank && d.wpRank === d.smartRank;
+                const twoEq =
+                  d.sawRank === d.wpRank ||
+                  d.wpRank === d.smartRank ||
+                  d.sawRank === d.smartRank;
+                const cls = allEq ? "same-rank" : twoEq ? "" : "diff-rank";
+                const label = allEq
+                  ? "✓ Semua Sama"
+                  : twoEq
+                  ? "~ Sebagian"
+                  : "≠ Berbeda";
+                return `
+                <tr>
+                  <td>${d.nama}</td>
+                  <td>${d.sawSkor.toFixed(4)}</td>
+                  <td>${d.sawRank}</td>
+                  <td>${d.wpSkor.toFixed(4)}</td>
+                  <td>${d.wpRank}</td>
+                  <td>${d.smartSkor.toFixed(4)}</td>
+                  <td>${d.smartRank}</td>
+                  <td class="${cls}">${label}</td>
+                </tr>
+              `;
+              })
+              .join("")}
+          </tbody>
+        </table>
+      </div>
+      <div class="info-box" style="margin-top:1rem;">
+        <b>Kesesuaian Ketiga Metode:</b> ${allSame} dari ${
     data.length
   } alternatif
-          mendapat peringkat sama di kedua metode (${pct}%).
-          ${
-            pct >= 60
-              ? " Kedua metode memberikan hasil yang <b>konsisten</b>."
-              : " Terdapat perbedaan signifikan — pertimbangkan konteks lebih lanjut."
-          }
-        </div>
+        mendapat peringkat sama di SAW, WP, dan SMART (${pctAll}%).
+        &nbsp;|&nbsp;
+        <b>SAW vs WP:</b> ${pctSawWp}% konsisten.
+        ${
+          pctAll >= 60
+            ? " Ketiga metode memberikan hasil yang <b>konsisten</b>."
+            : " Terdapat perbedaan — pertimbangkan konteks dan karakteristik data lebih lanjut."
+        }
       </div>
-  
-      <!-- Visualisasi Bar Chart -->
-      <div class="card" style="margin-top:1.25rem;">
-        <div class="card-title"><span class="dot"></span> Visualisasi Perbandingan Skor</div>
-        <div id="scoreViz">
-          ${sortedViz
-            .map(
-              (d) => `
-            <div class="score-item">
-              <div class="score-name">${d.nama}</div>
-              <div class="score-row">
-                <span class="score-label saw">SAW</span>
-                <div class="score-bar-track">
-                  <div class="score-bar-fill saw" style="width:${(
-                    (d.sawSkor / maxSaw) *
-                    100
-                  ).toFixed(1)}%;"></div>
-                </div>
-                <span class="score-val">${d.sawSkor.toFixed(4)}</span>
-              </div>
-              <div class="score-row">
-                <span class="score-label wp">WP</span>
-                <div class="score-bar-track">
-                  <div class="score-bar-fill wp" style="width:${(
-                    (d.wpSkor / maxWp) *
-                    100
-                  ).toFixed(1)}%;"></div>
-                </div>
-                <span class="score-val">${d.wpSkor.toFixed(4)}</span>
-              </div>
-            </div>
-          `
-            )
-            .join("")}
-        </div>
-      </div>
-    `;
-}
+    </div>
 
-/* ════════════════════════════════════
-     HELPER: MATRIX TABLE HTML
-  ════════════════════════════════════ */
-function buildMatrixTable(data, isNorm, V) {
-  const maxV = V ? Math.max(...V) : 0;
-
-  return `
-      <table class="matrix-table">
-        <thead>
-          <tr>
-            <th>Alternatif</th>
-            ${kriteria
-              .map(
-                (k) => `
-              <th>${k.kode}<br>
-                <span style="font-size:.7rem;opacity:.7;">
-                  ${k.tipe === "benefit" ? "↑" : "↓"}
-                </span>
-              </th>
-            `
-              )
-              .join("")}
-            ${isNorm ? "<th>V<sub>i</sub></th>" : ""}
-          </tr>
-        </thead>
-        <tbody>
-          ${alternatif
-            .map(
-              (a, i) => `
-            <tr>
-              <td>${a.nama}</td>
-              ${data[i]
-                .map((v) => `<td>${isNorm ? v.toFixed(4) : v}</td>`)
-                .join("")}
-              ${
-                isNorm
-                  ? `
-                <td style="font-weight:500;color:${
-                  V[i] === maxV ? "var(--green-soft)" : "inherit"
-                };">
-                  ${V[i].toFixed(4)} ${V[i] === maxV ? "★" : ""}
-                </td>
-              `
-                  : ""
-              }
-            </tr>
-          `
-            )
-            .join("")}
-        </tbody>
-      </table>
-    `;
-}
-
-/* ════════════════════════════════════
-     HELPER: RANK LIST HTML
-  ════════════════════════════════════ */
-function buildRankList(ranked, maxV) {
-  return `
-      <div class="rank-list">
-        ${ranked
+    <!-- Visualisasi Bar Chart -->
+    <div class="card" style="margin-top:1.25rem;">
+      <div class="card-title"><span class="dot"></span> Visualisasi Perbandingan Skor</div>
+      <div id="scoreViz">
+        ${sortedViz
           .map(
-            (r, pos) => `
-          <div class="rank-item rank-${pos + 1}">
-            <div class="rank-medal">${pos + 1}</div>
-            <div class="rank-name">${r.nama}</div>
-            <div class="rank-bar-wrap">
-              <div class="rank-bar" style="width:${(
-                (r.skor / maxV) *
-                100
-              ).toFixed(1)}%;"></div>
+            (d) => `
+          <div class="score-item">
+            <div class="score-name">${d.nama}</div>
+            <div class="score-row">
+              <span class="score-label saw">SAW</span>
+              <div class="score-bar-track">
+                <div class="score-bar-fill saw" style="width:${(
+                  (d.sawSkor / maxSaw) *
+                  100
+                ).toFixed(1)}%;"></div>
+              </div>
+              <span class="score-val">${d.sawSkor.toFixed(4)}</span>
             </div>
-            <div class="rank-score">${r.skor.toFixed(4)}</div>
-            ${pos === 0 ? '<span class="winner-tag">Terbaik</span>' : ""}
+            <div class="score-row">
+              <span class="score-label wp">WP</span>
+              <div class="score-bar-track">
+                <div class="score-bar-fill wp" style="width:${(
+                  (d.wpSkor / maxWp) *
+                  100
+                ).toFixed(1)}%;"></div>
+              </div>
+              <span class="score-val">${d.wpSkor.toFixed(4)}</span>
+            </div>
+            <div class="score-row">
+              <span class="score-label smart">SMART</span>
+              <div class="score-bar-track">
+                <div class="score-bar-fill smart" style="width:${(
+                  (d.smartSkor / maxSmart) *
+                  100
+                ).toFixed(1)}%;"></div>
+              </div>
+              <span class="score-val">${d.smartSkor.toFixed(4)}</span>
+            </div>
           </div>
         `
           )
           .join("")}
       </div>
-    `;
+    </div>
+  `;
 }
 
 /* ════════════════════════════════════
-     HELPER: STEP ACCORDION HTML
-  ════════════════════════════════════ */
-function buildStep(num, title, body) {
+   HELPER: MATRIX TABLE HTML (SAW)
+════════════════════════════════════ */
+function buildMatrixTable(data, isNorm, V) {
+  const maxV = V ? Math.max(...V) : 0;
   return `
-      <div class="step-item">
-        <div class="step-head" onclick="toggleStep(this)">
-          <div class="step-num">${num}</div>
-          <div class="step-title">${title}</div>
-          <div class="step-arrow">▾</div>
+    <table class="matrix-table">
+      <thead>
+        <tr>
+          <th>Alternatif</th>
+          ${kriteria
+            .map(
+              (k) => `
+            <th>${k.kode}<br>
+              <span style="font-size:.7rem;opacity:.7;">${
+                k.tipe === "benefit" ? "↑" : "↓"
+              }</span>
+            </th>
+          `
+            )
+            .join("")}
+          ${isNorm ? "<th>V<sub>i</sub></th>" : ""}
+        </tr>
+      </thead>
+      <tbody>
+        ${alternatif
+          .map(
+            (a, i) => `
+          <tr>
+            <td>${a.nama}</td>
+            ${data[i]
+              .map((v) => `<td>${isNorm ? v.toFixed(4) : v}</td>`)
+              .join("")}
+            ${
+              isNorm && V
+                ? `
+              <td style="font-weight:500;color:${
+                V[i] === maxV ? "var(--green-soft)" : "inherit"
+              };">
+                ${V[i].toFixed(4)} ${V[i] === maxV ? "★" : ""}
+              </td>
+            `
+                : ""
+            }
+          </tr>
+        `
+          )
+          .join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+/* ════════════════════════════════════
+   HELPER: RANK LIST HTML (SAW / WP)
+════════════════════════════════════ */
+function buildRankList(ranked, maxV) {
+  return `
+    <div class="rank-list">
+      ${ranked
+        .map(
+          (r, pos) => `
+        <div class="rank-item rank-${pos + 1}">
+          <div class="rank-medal">${pos + 1}</div>
+          <div class="rank-name">${r.nama}</div>
+          <div class="rank-bar-wrap">
+            <div class="rank-bar" style="width:${(
+              (r.skor / maxV) *
+              100
+            ).toFixed(1)}%;"></div>
+          </div>
+          <div class="rank-score">${r.skor.toFixed(4)}</div>
+          ${pos === 0 ? '<span class="winner-tag">Terbaik</span>' : ""}
         </div>
-        <div class="step-body">${body}</div>
+      `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+/* ════════════════════════════════════
+   HELPER: RANK LIST HTML (SMART — teal)
+════════════════════════════════════ */
+function buildRankListSMART(ranked, maxV) {
+  return `
+    <div class="rank-list">
+      ${ranked
+        .map(
+          (r, pos) => `
+        <div class="rank-item smart-rank rank-${pos + 1}">
+          <div class="rank-medal">${pos + 1}</div>
+          <div class="rank-name">${r.nama}</div>
+          <div class="rank-bar-wrap">
+            <div class="rank-bar teal-bar" style="width:${(
+              (r.skor / maxV) *
+              100
+            ).toFixed(1)}%;"></div>
+          </div>
+          <div class="rank-score teal-score">${r.skor.toFixed(4)}</div>
+          ${
+            pos === 0
+              ? '<span class="winner-tag teal-winner">Terbaik</span>'
+              : ""
+          }
+        </div>
+      `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+/* ════════════════════════════════════
+   HELPER: STEP ACCORDION HTML
+   isTeal: boolean — gunakan warna teal untuk SMART
+════════════════════════════════════ */
+function buildStep(num, title, body, isTeal = false) {
+  const cls = isTeal ? " teal-step" : "";
+  return `
+    <div class="step-item${cls}">
+      <div class="step-head" onclick="toggleStep(this)">
+        <div class="step-num">${num}</div>
+        <div class="step-title">${title}</div>
+        <div class="step-arrow">▾</div>
       </div>
-    `;
+      <div class="step-body">${body}</div>
+    </div>
+  `;
 }
 
 function toggleStep(head) {
@@ -558,8 +798,8 @@ function openAllSteps(containerId) {
 }
 
 /* ════════════════════════════════════
-     MAIN: HITUNG SEMUA
-  ════════════════════════════════════ */
+   MAIN: HITUNG SEMUA
+════════════════════════════════════ */
 function hitungSemua() {
   // Sinkronisasi nilai dari input DOM ke array data
   alternatif.forEach((a, i) => {
@@ -573,20 +813,22 @@ function hitungSemua() {
 
   const sawRes = hitungSAW();
   const wpRes = hitungWP();
+  const smartRes = hitungSMART();
 
   renderSAW(sawRes);
   renderWP(wpRes);
-  renderCompare(sawRes, wpRes);
+  renderSMART(smartRes);
+  renderCompare(sawRes, wpRes, smartRes);
 
-  showToast("Perhitungan selesai! Lihat tab SAW, WP, dan Perbandingan.");
-  switchTab("saw");
+  showToast("Perhitungan SAW, WP & SMART selesai!");
+  switchTab("smart"); // langsung tampilkan tab SMART sebagai yang baru
 }
 
 /* ════════════════════════════════════
-     TAB NAVIGATION
-  ════════════════════════════════════ */
+   TAB NAVIGATION
+════════════════════════════════════ */
 function switchTab(name) {
-  const tabOrder = ["input", "saw", "wp", "compare"];
+  const tabOrder = ["input", "saw", "wp", "smart", "compare"];
 
   document
     .querySelectorAll(".tab-panel")
@@ -597,12 +839,13 @@ function switchTab(name) {
 
   document.getElementById("tab-" + name).classList.add("active");
   const idx = tabOrder.indexOf(name);
-  document.querySelectorAll(".tab-btn")[idx].classList.add("active");
+  if (idx >= 0)
+    document.querySelectorAll(".tab-btn")[idx].classList.add("active");
 }
 
 /* ════════════════════════════════════
-     TOAST NOTIFICATION
-  ════════════════════════════════════ */
+   TOAST NOTIFICATION
+════════════════════════════════════ */
 function showToast(msg) {
   const toast = document.getElementById("toast");
   toast.textContent = msg;
@@ -611,9 +854,13 @@ function showToast(msg) {
 }
 
 /* ════════════════════════════════════
-     INISIALISASI
-  ════════════════════════════════════ */
+   INISIALISASI
+════════════════════════════════════ */
 document.addEventListener("DOMContentLoaded", () => {
+  // Tandai tab SMART dengan kelas khusus
+  const tabBtns = document.querySelectorAll(".tab-btn");
+  if (tabBtns[3]) tabBtns[3].classList.add("smart-tab");
+
   renderKriteria();
   renderInputs();
 });

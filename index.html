@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SPK — Metode SAW &amp; WP</title>
+  <title>SPK — Metode SAW, WP &amp; SMART</title>
 
   <!-- Google Fonts -->
   <link
@@ -21,10 +21,11 @@
   ════════════════════════════════ -->
   <header>
     <h1>Sistem Pendukung Keputusan</h1>
-    <p>Evaluasi Kinerja Karyawan &middot; Metode SAW &amp; WP</p>
+    <p>Evaluasi Kinerja Karyawan &middot; Metode SAW, WP &amp; SMART</p>
     <div class="header-badge">
       <span class="badge">SAW</span>
       <span class="badge">WP</span>
+      <span class="badge">SMART</span>
       <span class="badge">Multi-Criteria</span>
     </div>
   </header>
@@ -60,7 +61,8 @@
       <button class="tab-btn active" onclick="switchTab('input')">① Input Data</button>
       <button class="tab-btn" onclick="switchTab('saw')">② Metode SAW</button>
       <button class="tab-btn" onclick="switchTab('wp')">③ Metode WP</button>
-      <button class="tab-btn" onclick="switchTab('compare')">④ Perbandingan</button>
+      <button class="tab-btn" onclick="switchTab('smart')">④ Metode SMART</button>
+      <button class="tab-btn" onclick="switchTab('compare')">⑤ Perbandingan</button>
     </div>
 
     <!-- ── TAB 1: Input Data ── -->
@@ -85,7 +87,7 @@
             + Tambah Kandidat
           </button>
           <button class="btn btn-primary" onclick="hitungSemua()">
-            Hitung SAW &amp; WP ▶
+            Hitung SAW, WP &amp; SMART ▶
           </button>
         </div>
       </div>
@@ -95,7 +97,7 @@
         <div class="card-title">
           <span class="dot"></span> Teori Metode
         </div>
-        <div class="grid-2">
+        <div class="grid-3">
 
           <!-- SAW -->
           <div>
@@ -129,6 +131,22 @@
             </div>
           </div>
 
+          <!-- SMART -->
+          <div>
+            <div style="font-weight:500;color:var(--teal-dk);margin-bottom:.5rem;
+                        font-family:'Cormorant Garamond',serif;font-size:1.1rem;">
+              SMART — Simple Multi-Attribute Rating Technique
+            </div>
+            <p style="font-size:.85rem;color:var(--stone);line-height:1.7;">
+              Metode SMART mengkonversi nilai ke utilitas (0–1) menggunakan transformasi
+              linear, lalu mengalikan dengan bobot ternormalisasi. Lebih eksplisit dalam
+              pemodelan preferensi pengambil keputusan.
+            </p>
+            <div class="formula-box">
+              U<sub>i</sub> = &Sigma; ( w<sub>j</sub> &times; u<sub>ij</sub> )
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -159,7 +177,19 @@
     </div><!-- /tab-wp -->
 
 
-    <!-- ── TAB 4: Perbandingan ── -->
+    <!-- ── TAB 4: SMART ── -->
+    <div id="tab-smart" class="tab-panel">
+      <div class="section-title">Metode SMART</div>
+      <div id="smart-content">
+        <div class="empty-state">
+          <div class="empty-icon">🌿</div>
+          Silakan input data terlebih dahulu dan tekan <b>Hitung</b>.
+        </div>
+      </div>
+    </div><!-- /tab-smart -->
+
+
+    <!-- ── TAB 5: Perbandingan ── -->
     <div id="tab-compare" class="tab-panel">
       <div class="section-title">Perbandingan Hasil</div>
       <div id="compare-content">
